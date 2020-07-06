@@ -304,7 +304,7 @@ Return a list of rows, each row is a vector:
                                   `((title . ,fname)
                                     (file_name . ,fname)
                                     (content . ,(buffer-substring-no-properties begin end))
-                                    (visibility . (or visibility "internal")))))))
+                                    (visibility . ,(or visibility "internal")))))))
     (kill-new snippet-url)
     (aio-await (gsnippet-refresh))))
 
