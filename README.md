@@ -5,6 +5,6 @@ It's inspired by [gist.el](https://github.com/defunkt/gist.el) but for [Gitlab S
 # Usage
 
 ``` elisp
-(setq gsnippet-private-token "<your-private-token>")
-(setq gsnippet-url "<your-gitlab-url>")
+(setq gsnip-private-token "<your-private-token>")
+(setq gsnip-url "<your-gitlab-url>")
 ```
