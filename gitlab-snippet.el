@@ -159,9 +159,11 @@
                                           url-http-end-of-headers
                                           (point-max)))
                             'utf-8)))
-             (snippet-id (let-alist svr-snippet .id)))
+             (snippet-id (let-alist svr-snippet .id))
+             (snippet-url (let-alist svr-snippet .web_url)))
         (if (= status-code 201)
-            (message "Post %s(id=%s) success!" fname snippet-id)
+            (prog1 snippet-url
+              (message "Post %s(id=%s) success!" fname snippet-id))
           (message "Post %s failed, status code: %s" fname status-code))))))
 
 (aio-defun gsnippet--delete-snippet (snippet-id)
@@ -297,14 +299,17 @@ Return a list of rows, each row is a vector:
     (message "Snippet link saved!")))
 
 (aio-defun gsnippet-region (begin end &optional visibility)
+  "Post current marked region from BEGIN to END with VISIBILITY."
   (interactive "r")
+  (deactivate-mark)
   (let* ((file (or (buffer-file-name) (buffer-name)))
-         (fname (file-name-nondirectory file)))
-    (aio-await (gsnippet--post-snippet
-                `((title . ,fname)
-                  (file_name . ,fname)
-                  (content . ,(buffer-substring-no-properties begin end))
-                  (visibility . "private"))))
+         (fname (file-name-nondirectory file))
+         (snippet-url (aio-await (gsnippet--post-snippet
+                                  `((title . ,fname)
+                                    (file_name . ,fname)
+                                    (content . ,(buffer-substring-no-properties begin end))
+                                    (visibility . "private"))))))
+    (kill-new snippet-url)
     (aio-await (gsnippet-refresh))))
 
 (aio-defun gsnippet-region-private (begin end)
