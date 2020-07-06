@@ -187,14 +187,14 @@ row."
   (let ((widths
          (seq-reduce
           (lambda (acc row)
-            (mapcar*
+            (cl-mapcar
              (lambda (a col) (+ (max a (length col)) 1))
              acc
              (append row '())))
           rows
           (seq-map #'length header-names))))
     (vconcat
-     (mapcar*
+     (cl-mapcar
       (lambda (col size) (list col size nil))
       header-names widths))))
 
@@ -222,7 +222,7 @@ Return a list of rows, each row is a vector:
       (gsnip--snippets-mode)
       (setq tabulated-list-format headers)
       (setq tabulated-list-entries
-            (mapcar*
+            (cl-mapcar
              (lambda (i x) (list i x))
              (number-sequence 0 (1- (length rows)))
              rows))
