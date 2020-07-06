@@ -229,7 +229,7 @@ Return a list of rows, each row is a vector:
       (tabulated-list-init-header)
       (tabulated-list-print t))))
 
-;;;###autoload(autoload 'gsnip "gitlab-snippet" "" t nil)
+;;;###autoload(autoload 'gsnip "gsnip" "" t nil)
 (aio-defun gsnip ()
   "Show Gitlab snippets list."
   (interactive)
