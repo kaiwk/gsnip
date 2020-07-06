@@ -42,7 +42,7 @@
 
 ;;;###autoload
 (defun gsnippet-toggle-debug ()
-  "Toggle debug."
+  "Toggle gitlab-snippet debug."
   (interactive)
   (if (gsnippet--log-debugging-p)
       (progn
@@ -57,24 +57,22 @@
 
 ;;; Gitlab Snippet API
 
-(defvar gsnippet-private-token nil)
-(defvar gsnippet-url nil)
-(defvar gsnippet--user-snippets nil)
-(defvar gsnippet--public-snippets nil) ; currently public snippets API not working
+(defvar gsnippet-private-token nil "Gitlab private token.")
+(defvar gsnippet-url "https://gitlab.com/" "Gitlab url.")
+(defvar gsnippet--user-snippets nil "Gitlab user snippets.")
 
-(defmacro gsnippet--api-base (suffix-path)
-  `(concat ,gsnippet-url "api/v4/snippets/" ,suffix-path))
+(defun gsnippet--api (suffix-path)
+  "Generate Gitlab Snippet API wit SUFFIX-PATH."
+  (concat gsnippet-url "api/v4/snippets/" suffix-path))
 
-(defconst gsnippet--api-user-snippets (gsnippet--api-base ""))
-(defconst gsnippet--api-public-snippets (gsnippet--api-base "public?per_page=20&page=50"))
 (defconst gsnippet--buffer-name "*gitlab-snippets*")
 
-(aio-defun gsnippet--fetch-snippets (url)
+(aio-defun gsnippet--fetch-user-snippets ()
   "Fetch user snippets."
   (let* ((url-request-method "GET")
          (url-request-extra-headers
           `(("PRIVATE-TOKEN" . ,gsnippet-private-token)))
-         (res (aio-await (aio-url-retrieve url))))
+         (res (aio-await (aio-url-retrieve (gsnippet--api "")))))
     (with-current-buffer (cdr res)
       (set-buffer-multibyte t)
       (json-read-from-string
@@ -104,8 +102,7 @@
        'utf-8))))
 
 (aio-defun gsnippet--put-snippet (snippet-id snippet)
-  "Update snippet by SNIPPET-ID with SNIPPET, a SNIPPET is an
-  alist which will be `json-encode' like below:
+  "Update snippet by SNIPPET-ID with SNIPPET, and it will be `json-encode' like below:
 
 {
     \"title\":\"a snippet for files backup\",
@@ -122,7 +119,7 @@
             ("Content-Type" . "application/json")))
          (url-request-data
           (encode-coding-string (json-encode snippet) 'utf-8))
-         (res (aio-await (aio-url-retrieve (gsnippet--api-base snippet-id)))))
+         (res (aio-await (aio-url-retrieve (gsnippet--api snippet-id)))))
     (with-current-buffer (cdr res)
       (let ((status-code (url-http-parse-response)))
         (if (= status-code 200)
@@ -130,7 +127,7 @@
           (message "Update %s failed, status code: %s" snippet-id status-code))))))
 
 (aio-defun gsnippet--post-snippet (snippet)
-  "Post SNIPPET, a SNIPPET is an alist which will be `json-encode' like below:
+  "Post SNIPPET, and it will be `json-encode' like below:
 
 {
     \"title\":\"a snippet for files backup\",
@@ -148,7 +145,7 @@
             ("Content-Type" . "application/json")))
          (url-request-data
           (encode-coding-string (json-encode snippet) 'utf-8))
-         (res (aio-await (aio-url-retrieve (gsnippet--api-base "")))))
+         (res (aio-await (aio-url-retrieve (gsnippet--api "")))))
     (with-current-buffer (cdr res)
       (set-buffer-multibyte t)
       (let* ((status-code (url-http-parse-response))
@@ -173,7 +170,7 @@
          (url-request-extra-headers
           `(("PRIVATE-TOKEN" . ,gsnippet-private-token)
             ("Content-Type" . "application/json")))
-         (res (aio-await (aio-url-retrieve (gsnippet--api-base snippet-id)))))
+         (res (aio-await (aio-url-retrieve (gsnippet--api snippet-id)))))
     (with-current-buffer (cdr res)
       (let ((status-code (url-http-parse-response)))
         (if (= status-code 204)
@@ -181,11 +178,6 @@
           (message "Delete %s failed, status code: %s" snippet-id status-code))))))
 
 
-(aio-defun gsnippet--init ()
-  (interactive)
-  (setq gsnippet--user-snippets (aio-await (gsnippet--fetch-snippets gsnippet--api-user-snippets)))
-  (setq gsnippet--public-snippets (aio-await (gsnippet--fetch-snippets gsnippet--api-public-snippets))))
-
 (defun gsnippet--make-tabulated-headers (header-names rows)
   "Calculate headers width.
 Column width calculated by picking the max width of every cell
@@ -220,8 +212,9 @@ Return a list of rows, each row is a vector:
                      .visibility .file_name .title (or .description "")))))
 
 (aio-defun gsnippet-refresh ()
+  "Refresh Gitlab user snippets."
   (interactive)
-  (aio-await (gsnippet--init))
+  (setq gsnippet--user-snippets (aio-await (gsnippet--fetch-user-snippets)))
   (let* ((header-names `("Id" "Created" "Visibility" "Filename" "Title" "Description"))
          (rows (gsnippet--make-tabulated-rows))
          (headers (gsnippet--make-tabulated-headers header-names rows)))
@@ -238,6 +231,7 @@ Return a list of rows, each row is a vector:
 
 ;;;###autoload(autoload 'gsnippet-list "gitlab-snippet" "" t nil)
 (aio-defun gsnippet-list ()
+  "Show Gitlab snippets list."
   (interactive)
   (aio-await (gsnippet-refresh))
   (switch-to-buffer gsnippet--buffer-name))
@@ -271,13 +265,25 @@ Return a list of rows, each row is a vector:
 ;;; gsnippet--snippets-mode
 
 (aio-defun gsnippet-yank ()
+  "Yank current entry's snippet."
   (interactive)
   (let* ((snippet-id (aref (tabulated-list-get-entry) 0))
          (raw (aio-await (gsnippet--fetch-raw snippet-id))))
     (kill-new raw)
     (message "Snippet saved!")))
 
+(aio-defun gsnippet-yank-link ()
+  "Yank current entry's snippet web link."
+  (interactive)
+  (let ((snippet-id (aref (tabulated-list-get-entry) 0)))
+    (kill-new (let-alist (seq-find
+                          (lambda (s) (let-alist s (string= (number-to-string .id) snippet-id)))
+                          gsnippet--user-snippets)
+                .web_url))
+    (message "Snippet link saved!")))
+
 (aio-defun gsnippet-edit-meta ()
+  "Edit current entry's title and description."
   (interactive)
   (let* ((snippet-id (aref (tabulated-list-get-entry) 0))
          (title (aref (tabulated-list-get-entry) 4))
@@ -288,17 +294,8 @@ Return a list of rows, each row is a vector:
     (aio-await (gsnippet-refresh))
     (message "Save title and description success!")))
 
-(aio-defun gsnippet-yank-link ()
-  (interactive)
-  (let ((snippet-id (aref (tabulated-list-get-entry) 0)))
-    (kill-new (let-alist (seq-find
-                          (lambda (s) (let-alist s (string= (number-to-string .id) snippet-id)))
-                          gsnippet--user-snippets)
-                .web_url))
-    (message "Snippet link saved!")))
-
 (aio-defun gsnippet-region (begin end &optional visibility)
-  "Post current marked region from BEGIN to END with VISIBILITY."
+  "Post marked region from BEGIN to END with VISIBILITY. Default VISIBILITY is internal."
   (interactive "r")
   (deactivate-mark)
   (let* ((file (or (buffer-file-name) (buffer-name)))
@@ -307,19 +304,22 @@ Return a list of rows, each row is a vector:
                                   `((title . ,fname)
                                     (file_name . ,fname)
                                     (content . ,(buffer-substring-no-properties begin end))
-                                    (visibility . "private"))))))
+                                    (visibility . (or visibility "internal")))))))
     (kill-new snippet-url)
     (aio-await (gsnippet-refresh))))
 
 (aio-defun gsnippet-region-private (begin end)
+  "Post marked region from BEGIN to END with private visibility."
   (interactive "r")
   (aio-await (gsnippet-region begin end "private")))
 
 (aio-defun gsnippet-region-public (begin end)
+  "Post marked region from BEGIN to END with public visibility."
   (interactive "r")
   (aio-await (gsnippet-region begin end "public")))
 
 (aio-defun gsnippet-delete ()
+  "Delete snippet."
   (interactive)
   (let* ((snippet-id (aref (tabulated-list-get-entry) 0))
          (confirm-delete (yes-or-no-p (format "Delete snippet %s?" snippet-id))))
@@ -353,7 +353,7 @@ Return a list of rows, each row is a vector:
 ;;; gsnippet-mode
 
 (defvar gsnippet-id nil
-  "A buffer-local value to identify current buffer snippet-id.")
+  "A buffer-local value to identify current buffer's snippet-id.")
 (make-variable-buffer-local 'gsnippet-id)
 
 (defvar gsnippet-mode-map
@@ -361,9 +361,10 @@ Return a list of rows, each row is a vector:
     (prog1 map
       (define-key map [remap save-buffer] 'gsnippet-mode-save-buffer)
       (define-key map [remap write-file] 'gsnippet-mode-write-file)))
-  "Keymap for `gsnippet-mode'.")
+  "Keymap for command `gsnippet-mode'.")
 
 (aio-defun gsnippet-mode-save-buffer ()
+  "Save snippet."
   (interactive)
   (let ((content (with-current-buffer (buffer-name)
                    (save-restriction
@@ -373,6 +374,7 @@ Return a list of rows, each row is a vector:
   (aio-await (gsnippet-refresh)))
 
 (aio-defun gsnippet-mode-write-file ()
+  "Rename snippet name."
   (interactive)
   (let ((new-name (read-from-minibuffer "File name: " (gsnippet--snippet-filename gsnippet-id))))
     (aio-await (gsnippet--put-snippet gsnippet-id `((file_name . ,new-name)))))
@@ -384,3 +386,5 @@ Return a list of rows, each row is a vector:
   :map 'gsnippet-mode-map)
 
 (provide 'gitlab-snippet)
+
+;;; gitlab-snippet.el ends here
