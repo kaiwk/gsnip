@@ -1,4 +1,4 @@
-;;; gitlab-snippet.el --- A gitlab snippet client.          -*- lexical-binding: t; no-byte-compile: t -*-
+;;; gsnip.el --- A gitlab snippet client          -*- lexical-binding: t; no-byte-compile: t -*-
 
 ;; Copyright (C) 2020  Wang Kai
 
@@ -23,11 +23,11 @@
 
 ;;; Commentary:
 
-;; gitlab-snippet.el is an unofficial Gitlab Snippet client.
+;; gsnip.el is an unofficial Gitlab Snippet client.
 ;;
 ;;; Code:
 
-(require 'cl)
+(require 'cl-lib)
 (require 'seq)
 
 (require 'aio)
@@ -385,6 +385,6 @@ Return a list of rows, each row is a vector:
   :lighter " gsnip"
   :map 'gsnip-mode-map)
 
-(provide 'gitlab-snippet)
+(provide 'gsnip)
 
-;;; gitlab-snippet.el ends here
+;;; gsnip.el ends here
