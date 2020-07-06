@@ -151,7 +151,6 @@
           (encode-coding-string (json-encode snippet) 'utf-8))
          (res (aio-await (aio-url-retrieve (gsnippet--api-base "")))))
     (with-current-buffer (cdr res)
-      (switch-to-buffer (current-buffer))
       (set-buffer-multibyte t)
       (let* ((status-code (url-http-parse-response))
              (svr-snippet (json-read-from-string
