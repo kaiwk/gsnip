@@ -5,7 +5,7 @@
 ;; Author: Wang Kai <kaiwkx@gmail.com>
 ;; Keywords: extensions, tools
 ;; URL: https://github.com/kaiwk/gitlab-snippet
-;; Package-Requires: ((emacs "26") (dash "2.16.0") (aio "1.0") (log4e "0.3.3"))
+;; Package-Requires: ((emacs "26") (aio "1.0") (log4e "0.3.3"))
 ;; Version: 0.1.0
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -31,7 +31,6 @@
 (require 'seq)
 
 (require 'aio)
-(require 'dash)
 (require 'log4e)
 (log4e:deflogger "gsnippet" "%t [%l] %m" "%H:%M:%S" '((fatal . "fatal")
                                                       (error . "error")
@@ -196,14 +195,14 @@ row."
   (let ((widths
          (seq-reduce
           (lambda (acc row)
-            (-zip-with
+            (mapcar*
              (lambda (a col) (+ (max a (length col)) 1))
              acc
              (append row '())))
           rows
           (seq-map #'length header-names))))
     (vconcat
-     (-zip-with
+     (mapcar*
       (lambda (col size) (list col size nil))
       header-names widths))))
 
@@ -230,9 +229,9 @@ Return a list of rows, each row is a vector:
       (gsnippet--snippets-mode)
       (setq tabulated-list-format headers)
       (setq tabulated-list-entries
-            (-zip-with
+            (mapcar*
              (lambda (i x) (list i x))
-             (-iterate '1+ 0 (length rows))
+             (number-sequence 0 (1- (length rows)))
              rows))
       (tabulated-list-init-header)
       (tabulated-list-print t))))
