@@ -1,4 +1,4 @@
-;;; gsnip.el --- A gitlab snippet client          -*- lexical-binding: t; no-byte-compile: t -*-
+;;; gsnip.el --- A gitlab snippet client          -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2020  Wang Kai
 
