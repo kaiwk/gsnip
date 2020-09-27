@@ -64,6 +64,9 @@
 (defvar gsnip-private-token nil "Gitlab private token.")
 (defvar gsnip-url "https://gitlab.com/" "Gitlab url.")
 (defvar gsnip--user-snippets nil "Gitlab user snippets.")
+(defvar-local gsnip-id nil
+  "A buffer-local value to identify current buffer's snippet-id.")
+(defvar url-http-end-of-headers)
 
 (defun gsnip--api (suffix-path)
   "Generate Gitlab Snippet API wit SUFFIX-PATH."
@@ -355,10 +358,6 @@ Return a list of rows, each row is a vector:
 
 
 ;;; gsnip-mode
-
-(defvar gsnip-id nil
-  "A buffer-local value to identify current buffer's snippet-id.")
-(make-variable-buffer-local 'gsnip-id)
 
 (defvar gsnip-mode-map
   (let ((map (make-sparse-keymap)))
