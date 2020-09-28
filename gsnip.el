@@ -301,6 +301,7 @@ Return a list of rows, each row is a vector:
     (aio-await (gsnip-refresh))
     (message "Save title and description success!")))
 
+;;;###autoload(autoload 'gsnip-region "gsnip" "" t nil)
 (aio-defun gsnip-region (begin end &optional visibility)
   "Post marked region from BEGIN to END with VISIBILITY. Default VISIBILITY is internal."
   (interactive "r")
@@ -315,11 +316,13 @@ Return a list of rows, each row is a vector:
     (kill-new snippet-url)
     (aio-await (gsnip-refresh))))
 
+;;;###autoload(autoload 'gsnip-region-private "gsnip" "" t nil)
 (aio-defun gsnip-region-private (begin end)
   "Post marked region from BEGIN to END with private visibility."
   (interactive "r")
   (aio-await (gsnip-region begin end "private")))
 
+;;;###autoload(autoload 'gsnip-region-public "gsnip" "" t nil)
 (aio-defun gsnip-region-public (begin end)
   "Post marked region from BEGIN to END with public visibility."
   (interactive "r")
