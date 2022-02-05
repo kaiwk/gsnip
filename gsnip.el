@@ -99,7 +99,7 @@
                               (let-alist s (string= (number-to-string .id) snippet-id)))
                             gsnip--user-snippets))
          (res (let-alist snippet
-                (aio-await (aio-url-retrieve .raw_url)))))
+                (aio-await (aio-url-retrieve (gsnip--api (concat (number-to-string .id) "/raw")))))))
     (with-current-buffer (cdr res)
       (set-buffer-multibyte t)
       (decode-coding-string
